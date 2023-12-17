@@ -21,6 +21,9 @@ class Block(object):
         
     def getColor(self):
         return self._color
+    
+    def setColor(self, color):
+        self._color = color
 
 class Tetromino(object):
     def __init__(self):
@@ -34,7 +37,7 @@ class Tetromino(object):
     def _setColor(self, color):
         for state in self._states:
             for block in state:
-                block._color = color
+                block.setColor(color)
              
     def _setStates(self, states):
         self._states = states

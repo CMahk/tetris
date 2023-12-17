@@ -1,4 +1,5 @@
 from sre_parse import State
+from tkinter import W
 from typing import Final
 from tetrominos import *
 import random
@@ -13,13 +14,18 @@ BOARD_WIDTH: Final = 10
 BOARD_HEIGHT: Final = 23
 
 # Starting coordinate for tetrominos
-STARTING_COORD_ROW: Final = 19
+STARTING_COORD_ROW: Final = 1
 STARTING_COORD_COL: Final = 4
 
 class Board(object):
     def __init__(self):
         # Create an empty board of Block objects
         self.blockGrid = [[Block(0, 0) for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)] 
+        
+        # Set margin color blocks
+        for row in range(0, 3):
+            for col in range(0, BOARD_WIDTH):
+                self.blockGrid[row][col].setColor(MARGIN_COLOR)
     
 class GameManager(object):
     def __init__(self):
@@ -30,6 +36,7 @@ class GameManager(object):
 
     def tick(self):
         self.__drop()
+        self.__updateMinoState(0)
         self.__updateBoard()
         
     def __drop(self):
@@ -56,26 +63,29 @@ class GameManager(object):
 
     def __updateBoard(self):
         # Remove previous state blocks
+        # Tetromino rotated?
+        print("Current state: "+ str(self.currentMino.currentState))
+        print("Prev state: " + str(self.currentMino.prevState))
+        print("absCoords:", self.currentMino.absCoords)
+        print("prevAbsCoords:", self.currentMino.prevAbsCoords)
+        print("------------------------")
 
-        # State AND coords changed
-        if ((self.currentMino.prevState != self.currentMino.currentState) and (self.currentMino.prevAbsCoords != self.currentMino.absCoords)):
-                for block in self.currentMino.getStates()[self.currentMino.prevState]:
-                    relRow, relCol = block.relCoords
-                    absRow, absCol = self.currentMino.prevAbsCoords
-                    self.board.blockGrid[absRow + relRow][absCol + relCol] = EMPTY_BLOCK
-        else: # Otherwise one or the other?
-            # Tetromino rotated?
-            if (self.currentMino.prevState != self.currentMino.currentState):
-                for block in self.currentMino.getStates()[self.currentMino.prevState]:
-                    relRow, relCol = block.relCoords
-                    absRow, absCol = self.currentMino.absCoords
-                    self.board.blockGrid[absRow + relRow][absCol + relCol] = EMPTY_BLOCK
-            # Coordinates changed?
-            if (self.currentMino.prevAbsCoords != self.currentMino.absCoords):
-                for block in self.currentMino.getStates()[self.currentMino.currentState]:
-                    relRow, relCol = block.relCoords
-                    absRow, absCol = self.currentMino.prevAbsCoords
-                    self.board.blockGrid[absRow + relRow][absCol + relCol] = EMPTY_BLOCK
+        if (self.currentMino.prevState != self.currentMino.currentState):
+            for block in self.currentMino.getStates()[self.currentMino.prevState]:
+                relRow, relCol = block.relCoords
+                absRow, absCol = self.currentMino.absCoords
+                self.board.blockGrid[absRow + relRow][absCol + relCol] = EMPTY_BLOCK
+                if (absRow < 3):
+                    self.board.blockGrid[absRow + relRow][absCol + relCol].setColor(MARGIN_COLOR)
+                    
+        # Coordinates changed?
+        if (self.currentMino.prevAbsCoords != self.currentMino.absCoords):
+            for block in self.currentMino.getStates()[self.currentMino.currentState]:
+                relRow, relCol = block.relCoords
+                absRow, absCol = self.currentMino.prevAbsCoords
+                self.board.blockGrid[absRow + relRow][absCol + relCol] = EMPTY_BLOCK
+                if ((absRow) < 3):
+                    self.board.blockGrid[absRow + relRow][absCol + relCol].setColor(MARGIN_COLOR)
 
         # Update current state blocks
         for block in self.currentMino.getStates()[self.currentMino.currentState]:
@@ -152,10 +162,37 @@ class GameManager(object):
         self.__updateBoard()
 
     def softDrop(self):
-        print("TODO: soft drop")
+        self.__drop()
         
     def hardDrop(self):
-        print("TODO: hard drop")
+        # Drop the tetromino as far down as possible
+        self.currentMino.prevAbsCoords = self.currentMino.absCoords
+        absCoords = self.getAbsoluteCoords() # Get all coordinates of the current tetromino
+        row, col = (0, 0) # Prime these
+
+        # Assume everything is good unless something is found
+        checks = [True, True, True, True]
+        
+        while(all(checks) and row < BOARD_HEIGHT - 2):
+            for i in range(0, 4):
+                row, col = absCoords[i]
+                checkRow = row + 1
+                if (checkRow > BOARD_HEIGHT):                
+                    checks[i] = False # We're at the furthest point; stop
+                    break
+                elif (checkRow < BOARD_HEIGHT): # Make sure the desired move isn't past the board wall
+                    if (not self.board.blockGrid[checkRow][col].isOccupied):
+                        checks[i] = True
+                    elif ((checkRow, col) in absCoords): # The block is occupied, but is it because it's part of the current mino?
+                        checks[i] = True # If so, we're safe  
+                
+            # If all True, then we're good to drop a row
+            if (all(checks)):
+                row, col = self.currentMino.absCoords
+                self.currentMino.absCoords = (row + 1, col)
+                
+        # Furthest drop point found
+        self.__updateBoard()
         
     def moveLeft(self):
         self.currentMino.prevAbsCoords = self.currentMino.absCoords

@@ -57,7 +57,6 @@ class GameWindow(tk.Tk):
         #             self.canvas.frameGrid[absRow + relRow][absCol + relCol].config(bg = BASE_COLOR)
 
         # Update current state blocks
-        print ("tick")
         for row in range(0, BOARD_HEIGHT):
             for col in range(0, BOARD_WIDTH):
                 self.canvas.frameGrid[row][col].config(bg = self.gm.board.blockGrid[row][col].getColor())
