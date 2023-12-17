@@ -1,2 +1,7 @@
 # tetris
-Still lots to do, but the pieces can be spun :)
+Only Python 3 is needed to run this
+
+# TODOs
+* Create kick table (SRS)
+* Clear lines function
+* Multiplayer
