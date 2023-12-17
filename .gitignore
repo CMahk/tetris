@@ -1,6 +1,3 @@
 .vs/
 __pycache__/
-./tetris/someones_tetris.py
-./tetris/test.py
 ./tetris/__pycache__/
-./tetris/tetris.pyproj

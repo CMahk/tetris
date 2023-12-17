@@ -1,6 +1,8 @@
-from game_manager import *
-from typing import Final
+from ctypes.wintypes import RGB
 import tkinter as tk
+from game_manager import *
+from timer import *
+from typing import Final
 
 # In pixels
 CANVAS_WIDTH: Final  = BLOCK_SIZE * BOARD_WIDTH
@@ -27,28 +29,38 @@ class GameWindow(tk.Tk):
         self.canvas = GameCanvas(self)
         self.canvas.pack(padx = 50, pady = 50)
         
+        self.timer = RepeatedTimer(1.0, self.__tick)
+
         self.bind("<Key>", self.__keyEventListener)
         
         self.__updateWindow()
         
+    def __tick(self):
+        self.gm.tick()
+        self.__updateWindow()
+
+    def rgb_to_hex(self, r, g, b):
+        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
     def __updateWindow(self):
         mino = self.gm.currentMino
         
         # Remove previous state blocks
-        if (mino.prevState != mino.currentState):
-            for block in mino.states[mino.prevState]:
-                relRow, relCol = block.relCoords
-                absRow, absCol = mino.absCoords
-                if ((absRow + relRow) <= 2):
-                    self.canvas.frameGrid[absRow + relRow][absCol + relCol].config(bg = MARGIN_COLOR)
-                else:
-                    self.canvas.frameGrid[absRow + relRow][absCol + relCol].config(bg = BASE_COLOR)
+        # if (mino.prevState != mino.currentState):
+        #     print("UPDATE STATE")
+        #     for block in mino.states[mino.prevState]:
+        #         relRow, relCol = block.relCoords
+        #         absRow, absCol = mino.absCoords
+        #         if ((absRow + relRow) <= 2):
+        #             self.canvas.frameGrid[absRow + relRow][absCol + relCol].config(bg = MARGIN_COLOR)
+        #         else:
+        #             self.canvas.frameGrid[absRow + relRow][absCol + relCol].config(bg = BASE_COLOR)
 
         # Update current state blocks
-        for block in mino.states[mino.currentState]:
-            relRow, relCol = block.relCoords
-            absRow, absCol = mino.absCoords
-            self.canvas.frameGrid[absRow + relRow][absCol + relCol].config(bg = mino.color)
+        print ("tick")
+        for row in range(0, BOARD_HEIGHT):
+            for col in range(0, BOARD_WIDTH):
+                self.canvas.frameGrid[row][col].config(bg = self.gm.board.blockGrid[row][col].getColor())
 
     def __keyEventListener(self, event):
         if (event.keysym == "Up" or event.keysym == "x"):
@@ -81,13 +93,13 @@ class GameCanvas(tk.Canvas):
         )
         
         # Visualize the block grid via frames
-        self.frameGrid = [[tk.Frame() for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)] 
+        self.frameGrid = [[tk.Frame() for row in range(BOARD_WIDTH)] for col in range(BOARD_HEIGHT)] 
        
         # Create grid managers for the board
-        for x in range(0, BOARD_WIDTH):
-            self.columnconfigure(x, weight = 1)
-        for y in range(0, BOARD_HEIGHT):
-            self.rowconfigure(y, weight = 1)
+        for col in range(0, BOARD_WIDTH):
+            self.columnconfigure(col, weight = 1)
+        for row in range(0, BOARD_HEIGHT):
+            self.rowconfigure(row, weight = 1)
         
         # Upper 3 rows should be blank
         for y in range(0, 3):
@@ -108,7 +120,7 @@ class GameCanvas(tk.Canvas):
             for x in range(0, BOARD_WIDTH):
                 frame = tk.Frame(
                     self,
-                    bg=window.gm.board.blockGrid[y][x].color,
+                    bg=window.gm.board.blockGrid[y][x].getColor(),
                     width = BLOCK_SIZE,
                     height = BLOCK_SIZE,
                     relief = tk.SOLID,
@@ -117,6 +129,6 @@ class GameCanvas(tk.Canvas):
                 frame.grid(row = y, column = x)
                 self.frameGrid[y][x] = frame
         
-if __name__ == "__main__":
-    gw = GameWindow()
-    gw.mainloop()
+#if __name__ == "__main__":
+gw = GameWindow()
+gw.mainloop()
