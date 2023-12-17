@@ -14,9 +14,11 @@ class Bag(Enum):
     T = 6
 
 class Block(object): 
-    def __init__(self, row, col):
+    def __init__(self, row = 0, col = 0):
         self.relCoords = (row, col)
         self.isOccupied = False
+        self.isCurrent = False
+        self.isPlaced = False
         self._color = BASE_COLOR
         
     def getColor(self):
@@ -26,12 +28,14 @@ class Block(object):
         self._color = color
 
 class Tetromino(object):
+    # Tetromino is created. We can assume it is the current piece the player is using
+    # The fields are set via the child's __init__()
     def __init__(self):
         self.currentState = 0
         self.prevState = 0
         self.absCoords = (0, 0)
         self.prevAbsCoords = (0, 0)
-        self._states = [[Block(0,0), Block(0,0), Block(0,0), Block(0,0)] * 4]
+        self._states = [[Block(), Block(), Block(), Block()] * 4]
         self.shape = "Null"
         
     def _setColor(self, color):
@@ -41,12 +45,32 @@ class Tetromino(object):
              
     def _setStates(self, states):
         self._states = states
-        for state in self._states:
-            for block in state:
-                block.isOccupied = True
                 
     def getStates(self):
         return self._states
+    
+    def updateCurrentBlockState(self):
+        # Set all states to False
+        for state in self._states:
+            for block in state:
+                block.isCurrent = False
+                block.isOccupied = False
+
+        # Only set the current state to True
+        for block in self.getCurrentStateBlocks():
+            block.isCurrent = True
+            block.isOccupied = True
+    
+    def getCurrentStateBlocks(self):
+        return self.getStates()[self.currentState]
+    
+    def tetrominoPlaced(self):
+        self.updateCurrentBlockState()        
+
+        for block in self.getCurrentStateBlocks():
+            block.isCurrent = False
+            block.isOccupied = True
+            block.isPlaced = True
     
 class O(Tetromino):
     def __init__(self):
@@ -55,12 +79,13 @@ class O(Tetromino):
         # Does not rotate at all in SRS           ##
         # Offset is based on bottom left block -> ##
         self._setStates([
-            [Block(0, 0), Block(-1, 0), Block(0, 1), Block(-1, 1)], # Facing up
-            [Block(0, 0), Block(-1, 0), Block(0, 1), Block(-1, 1)], # Facing right
-            [Block(0, 0), Block(-1, 0), Block(0, 1), Block(-1, 1)], # Facing down
-            [Block(0, 0), Block(-1, 0), Block(0, 1), Block(-1, 1)]  # Facing left
+            [Block(), Block(-1, 0), Block(0, 1), Block(-1, 1)], # Facing up
+            [Block(), Block(-1, 0), Block(0, 1), Block(-1, 1)], # Facing right
+            [Block(), Block(-1, 0), Block(0, 1), Block(-1, 1)], # Facing down
+            [Block(), Block(-1, 0), Block(0, 1), Block(-1, 1)]  # Facing left
         ])
         self._setColor("#ffff00")
+        self.updateCurrentBlockState()
         self.shape = "O"
 
 class I(Tetromino):
@@ -70,12 +95,13 @@ class I(Tetromino):
         # Offset is based on middle left block ####
         #                                       ^
         self._setStates([
-            [Block(0, 0), Block(0, -1), Block(0, 1), Block(0, 2)], # Facing up
-            [Block(0, 0), Block(-1, 0), Block(1, 0), Block(2, 0)], # Facing right
-            [Block(0, 0), Block(0, 1), Block(0, -1), Block(0, -2)], # Facing down
-            [Block(0, 0), Block(-1, 0), Block(1, 0), Block(2, 0)] # Facing left
+            [Block(), Block(0, -1), Block(0, 1), Block(0, 2)], # Facing up
+            [Block(), Block(-1, 0), Block(1, 0), Block(2, 0)], # Facing right
+            [Block(), Block(0, 1), Block(0, -1), Block(0, -2)], # Facing down
+            [Block(), Block(-1, 0), Block(1, 0), Block(2, 0)] # Facing left
         ])
         self._setColor("#00ffff")
+        self.updateCurrentBlockState()
         self.shape = "I"
 
 class J(Tetromino):
@@ -86,12 +112,13 @@ class J(Tetromino):
         # Offset is based on bottom middle block ###
         #                                         ^
         self._setStates([
-            [Block(0, 0), Block(0, 1), Block(0, -1), Block(-1, -1)], # Facing up
-            [Block(0, 0), Block(-1, 0), Block(-1, 1), Block(1, 0)], # Facing right
-            [Block(0, 0), Block(0, 1), Block(0, -1), Block(1, 1)], # Facing down
-            [Block(0, 0), Block(-1, 0), Block(1, 0), Block(1, -1)] # Facing left
+            [Block(), Block(0, 1), Block(0, -1), Block(-1, -1)], # Facing up
+            [Block(), Block(-1, 0), Block(-1, 1), Block(1, 0)], # Facing right
+            [Block(), Block(0, 1), Block(0, -1), Block(1, 1)], # Facing down
+            [Block(), Block(-1, 0), Block(1, 0), Block(1, -1)] # Facing left
         ])
         self._setColor("#0000ff")
+        self.updateCurrentBlockState()
         self.shape = "J"
         
 class L(Tetromino):
@@ -102,12 +129,13 @@ class L(Tetromino):
         # Offset is based on bottom middle block ###
         #                                         ^
         self._setStates([
-            [Block(0, 0), Block(0, 1), Block(-1, 1), Block(0, -1)], # Facing up
-            [Block(0, 0), Block(-1, 0), Block(1, 1), Block(1, 0)], # Facing right
-            [Block(0, 0), Block(0, 1), Block(0, -1), Block(1, -1)], # Facing down
-            [Block(0, 0), Block(-1, 0), Block(1, 0), Block(-1, -1)] # Facing left
+            [Block(), Block(0, 1), Block(-1, 1), Block(0, -1)], # Facing up
+            [Block(), Block(-1, 0), Block(1, 1), Block(1, 0)], # Facing right
+            [Block(), Block(0, 1), Block(0, -1), Block(1, -1)], # Facing down
+            [Block(), Block(-1, 0), Block(1, 0), Block(-1, -1)] # Facing left
         ])
         self._setColor("#ffaa00")
+        self.updateCurrentBlockState()
         self.shape = "L"
         
 class S(Tetromino):
@@ -118,12 +146,13 @@ class S(Tetromino):
         # Offset is based on bottom middle block ##
         #                                         ^
         self._setStates([
-            [Block(0, 0), Block(-1, 0), Block(-1, 1), Block(0, -1)], # Facing up
-            [Block(0, 0), Block(-1, 0), Block(0, 1), Block(1, 1)], # Facing right
-            [Block(0, 0), Block(0, 1), Block(1, 0), Block(1, -1)], # Facing down
-            [Block(0, 0), Block(0, -1), Block(1, 0), Block(-1, -1)] # Facing left
+            [Block(), Block(-1, 0), Block(-1, 1), Block(0, -1)], # Facing up
+            [Block(), Block(-1, 0), Block(0, 1), Block(1, 1)], # Facing right
+            [Block(), Block(0, 1), Block(1, 0), Block(1, -1)], # Facing down
+            [Block(), Block(0, -1), Block(1, 0), Block(-1, -1)] # Facing left
         ])
         self._setColor("#00ff00")
+        self.updateCurrentBlockState()
         self.shape = "S"
         
 class Z(Tetromino):
@@ -134,12 +163,13 @@ class Z(Tetromino):
         # Offset is based on bottom middle block  ##
         #                                         ^
         self._setStates([
-            [Block(0, 0), Block(-1, 0), Block(-1, -1), Block(0, 1)], # Facing up
-            [Block(0, 0), Block(0, 1), Block(-1, 1), Block(1, 0)], # Facing right
-            [Block(0, 0), Block(0, -1), Block(1, 0), Block(1, 1)], # Facing down
-            [Block(0, 0), Block(0, -1), Block(-1, 0), Block(1, -1)] # Facing left
+            [Block(), Block(-1, 0), Block(-1, -1), Block(0, 1)], # Facing up
+            [Block(), Block(0, 1), Block(-1, 1), Block(1, 0)], # Facing right
+            [Block(), Block(0, -1), Block(1, 0), Block(1, 1)], # Facing down
+            [Block(), Block(0, -1), Block(-1, 0), Block(1, -1)] # Facing left
         ])
         self._setColor("#ff0000")
+        self.updateCurrentBlockState()
         self.shape = "Z"
 
 class T(Tetromino):
@@ -150,11 +180,12 @@ class T(Tetromino):
         # Offset is based on bottom middle block    ###
         #                                            ^
         self._setStates([
-            [Block(0, 0), Block(-1, 0), Block(0, -1), Block(0, 1)], # Facing up
-            [Block(0, 0), Block(1, 0), Block(-1, 0), Block(0, 1)],  # Facing right
-            [Block(0, 0), Block(0, 1), Block(0, -1), Block(1, 0)],  # Facing down
-            [Block(0, 0), Block(-1, 0), Block(1, 0), Block(0, -1)]  # Facing left
+            [Block(), Block(-1, 0), Block(0, -1), Block(0, 1)], # Facing up
+            [Block(), Block(1, 0), Block(-1, 0), Block(0, 1)],  # Facing right
+            [Block(), Block(0, 1), Block(0, -1), Block(1, 0)],  # Facing down
+            [Block(), Block(-1, 0), Block(1, 0), Block(0, -1)]  # Facing left
         ])
         self._setColor("#9900ff")
+        self.updateCurrentBlockState()
         self.shape = "T"
         

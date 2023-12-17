@@ -23,8 +23,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="game_manager.py" />
-    <Compile Include="someones_tetris.py" />
-    <Compile Include="test.py" />
     <Compile Include="tetrominos.py" />
     <Compile Include="timer.py" />
   </ItemGroup>

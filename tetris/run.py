@@ -1,4 +1,3 @@
-from ctypes.wintypes import RGB
 import tkinter as tk
 from game_manager import *
 from timer import *
@@ -29,8 +28,10 @@ class GameWindow(tk.Tk):
         self.canvas = GameCanvas(self)
         self.canvas.pack(padx = 50, pady = 50)
         
+        # Game timer
         self.timer = RepeatedTimer(1.0, self.__tick)
 
+        # Keyboard input
         self.bind("<Key>", self.__keyEventListener)
         
         self.__updateWindow()
@@ -39,15 +40,10 @@ class GameWindow(tk.Tk):
         self.gm.tick()
         self.__updateWindow()
 
-    def rgb_to_hex(self, r, g, b):
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
-
     def __updateWindow(self):
         mino = self.gm.currentMino
         
-        # Remove previous state blocks
         # if (mino.prevState != mino.currentState):
-        #     print("UPDATE STATE")
         #     for block in mino.states[mino.prevState]:
         #         relRow, relCol = block.relCoords
         #         absRow, absCol = mino.absCoords
