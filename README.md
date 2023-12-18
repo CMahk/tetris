@@ -3,5 +3,7 @@ Only Python 3 is needed to run this
 
 # TODOs
 * Create kick table (SRS)
-* Clear lines function
-* Multiplayer
+* Hold tetromino key
+* Visualize bag
+* Visualize tetromino held
+* Multiplayer (!!!)
