@@ -1,6 +1,7 @@
 from typing import Final
 from tetrominos import *
 import winsound
+import copy
 import random
 
 # In pixels
@@ -21,6 +22,15 @@ def soundMove():
     
 def soundHardDrop():
     winsound.Beep(80, 50)
+    
+def soundRotate():
+    winsound.PlaySound(r"C:\Windows\Media\Windows Navigation Start.wav", winsound.SND_ASYNC)    
+    
+def soundLineClearedAny():
+    winsound.PlaySound(r"C:\Windows\Media\Windows Default.wav", winsound.SND_ASYNC)
+
+def soundLineClearedTetris():
+    winsound.PlaySound(r"C:\Windows\Media\Speech On.wav", winsound.SND_ASYNC)
 
 class Board(object):
     def __init__(self):
@@ -35,10 +45,24 @@ class Board(object):
 class GameManager(object):
     def __init__(self):
         self.board = Board()
-        self.currentBag = self.__createBag()
-        self.nextBag = self.__createBag()
-        self.nextTetromino()
+        self.__currentBag = self.__createBag()
+        self.__nextBag = self.__createBag()
+        self.__nextTetromino()
         self.__doTick = True
+        
+        testBlock = Block()
+        testBlock.isOccupied = True
+        testBlock.setColor(PRACTICE_COLOR)
+        self.board.blockGrid[BOARD_HEIGHT - 1] = [copy.deepcopy(testBlock) for i in range(9)]
+        self.board.blockGrid[BOARD_HEIGHT - 1].append(Block())
+        self.board.blockGrid[BOARD_HEIGHT - 2] = [copy.deepcopy(testBlock) for i in range(9)]
+        self.board.blockGrid[BOARD_HEIGHT - 2].append(Block())
+        self.board.blockGrid[BOARD_HEIGHT - 3] = [copy.deepcopy(testBlock) for i in range(9)]
+        self.board.blockGrid[BOARD_HEIGHT - 3].append(Block())
+        self.board.blockGrid[BOARD_HEIGHT - 4] = [copy.deepcopy(testBlock) for i in range(9)]
+        self.board.blockGrid[BOARD_HEIGHT - 4].append(Block())
+        self.board.blockGrid[BOARD_HEIGHT - 5] = [copy.deepcopy(testBlock) for i in range(9)]
+        self.board.blockGrid[BOARD_HEIGHT - 5].append(Block())
 
     
     # Run after every timer tick
@@ -123,13 +147,13 @@ class GameManager(object):
         elif (enum.value == 6):
             return T()
 
-    def nextTetromino(self):
-        self.currentMino = self.__EnumToMino(self.currentBag[0])
-        del self.currentBag[0]
+    def __nextTetromino(self):
+        self.currentMino = self.__EnumToMino(self.__currentBag[0])
+        del self.__currentBag[0]
         
-        if (len(self.currentBag) == 0):
-            self.currentBag = self.nextBag
-            self.nextBag = self.__createBag()
+        if (len(self.__currentBag) == 0):
+            self.__currentBag = self.__nextBag
+            self.__nextBag = self.__createBag()
         
         self.currentMino.absCoords = (STARTING_COORD_ROW, STARTING_COORD_COL)
         self.__updateBoard()
@@ -148,17 +172,17 @@ class GameManager(object):
     
     def cw(self):
         self.__updateMinoState(1)
-        winsound.PlaySound(r"C:\Windows\Media\Windows Navigation Start.wav", winsound.SND_ASYNC)
+        soundRotate()
         self.__updateBoard()
 
     def ccw(self):
         self.__updateMinoState(-1)
-        winsound.PlaySound(r"C:\Windows\Media\Windows Navigation Start.wav", winsound.SND_ASYNC)
+        soundRotate()
         self.__updateBoard()
         
     def reverse(self):
         self.__updateMinoState(2)
-        winsound.PlaySound(r"C:\Windows\Media\Windows Navigation Start.wav", winsound.SND_ASYNC)
+        soundRotate()
         self.__updateBoard()
 
     def softDrop(self):
@@ -201,12 +225,14 @@ class GameManager(object):
                 
         # Furthest drop point found
         self.__updateBoard()
-        self.currentMino.tetrominoPlaced()
+        self.__tetrominoPlaced()
         self.__updateBoard()
-        soundHardDrop()
-        self.__checkRowsCompleted()
-        self.nextTetromino()
         self.__doTick = True
+        
+    def __tetrominoPlaced(self):
+        self.currentMino.tetrominoPlaced()
+        self.__checkRowsCompleted()
+        self.__nextTetromino()
         
     def moveLeft(self):
         self.currentMino.prevAbsCoords = self.currentMino.absCoords
@@ -261,18 +287,28 @@ class GameManager(object):
         print("TODO: hold")
         
     def __checkRowsCompleted(self):
-        print("TODO: Check rows")
-        blocksOccupiedInRow = 0
-        linesCleared = 0
+        __linesCleared = 0
         # Check from the bottom up
-        for row in range(BOARD_HEIGHT - 1, 2, -1):
+        for row in range(BOARD_HEIGHT - 1, 3, -1):
+            __blocksOccupiedInRow = 0
             for col in range(0, BOARD_WIDTH):
                 if (self.board.blockGrid[row][col].isOccupied):
-                    blocksOccupiedInRow += 1
+                    __blocksOccupiedInRow += 1
                     
             # Clear the line
-            if (blocksOccupiedInRow == 10):
-                linesCleared += 1
-                for col in range(0, BOARD_WIDTH):
-                    self.board.blockGrid[row][col] = EMPTY_BLOCK
-        
+            if (__blocksOccupiedInRow == 10):
+                __linesCleared += 1
+                del self.board.blockGrid[row] # Special case !!!
+                    
+        print("Lines cleared: ", str(__linesCleared))
+        # Insert empty rows at top of board
+        for i in range(__linesCleared):
+            self.board.blockGrid.insert(3, [EMPTY_BLOCK for i in range(10)])
+                
+        # Play a sound based on number of lines cleared
+        if (__linesCleared <= 0):
+            soundHardDrop()
+        if (__linesCleared > 0 and __linesCleared < 4):
+            soundLineClearedAny()
+        elif (__linesCleared >= 4):
+            soundLineClearedTetris()

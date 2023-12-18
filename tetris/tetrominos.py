@@ -3,6 +3,7 @@ from enum import Enum
 
 BASE_COLOR: Final = "#302f2f"
 MARGIN_COLOR: Final = "#020c18"
+PRACTICE_COLOR: Final = "#bbbbbb"
 
 class Bag(Enum):
     O = 0
@@ -71,6 +72,7 @@ class Tetromino(object):
             block.isCurrent = False
             block.isOccupied = True
             block.isPlaced = True
+            
     
 class O(Tetromino):
     def __init__(self):
