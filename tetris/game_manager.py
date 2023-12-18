@@ -180,13 +180,15 @@ class GameManager(object):
             for i in range(0, 4):
                 row, col = absCoords[i]
                 checkRow = row + 1
+                
+                if (checkRow > BOARD_HEIGHT - 1):                
+                    checks[i] = False # We're at the furthest point; stop
+                    break
+                
                 if (self.board.blockGrid[checkRow][col].isOccupied):
                     if((checkRow, col) not in absCoords): # The block is occupied, but is it because it's part of the current mino?
                         checks[i] = False # Something else is occupying the block below. Stop above it
                         break
-                if (checkRow > BOARD_HEIGHT - 1):                
-                    checks[i] = False # We're at the furthest point; stop
-                    break
                     
 
             # If all True, then we're good to drop a row
@@ -260,12 +262,17 @@ class GameManager(object):
         
     def __checkRowsCompleted(self):
         print("TODO: Check rows")
-        # blocksOccupiedInRow = 0
-        # for row in range(0, BOARD_HEIGHT):
-        #     for col in range(0, BOARD_WIDTH):
-        #         if (self.board.blockGrid[row][col].isOccupied):
-        #             blocksOccupiedInRow += 1
+        blocksOccupiedInRow = 0
+        linesCleared = 0
+        # Check from the bottom up
+        for row in range(BOARD_HEIGHT - 1, 2, -1):
+            for col in range(0, BOARD_WIDTH):
+                if (self.board.blockGrid[row][col].isOccupied):
+                    blocksOccupiedInRow += 1
                     
-        #     if (blocksOccupiedInRow == 10):
-                
+            # Clear the line
+            if (blocksOccupiedInRow == 10):
+                linesCleared += 1
+                for col in range(0, BOARD_WIDTH):
+                    self.board.blockGrid[row][col] = EMPTY_BLOCK
         
