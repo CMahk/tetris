@@ -14,7 +14,7 @@ BOARD_WIDTH: Final = 10
 BOARD_HEIGHT: Final = 23
 
 # Starting coordinate for tetrominos
-STARTING_COORD_ROW: Final = 15
+STARTING_COORD_ROW: Final = 1
 STARTING_COORD_COL: Final = 4
 
 def soundMove():
@@ -49,21 +49,6 @@ class GameManager(object):
         self.__nextBag = self.__createBag()
         self.__nextTetromino()
         self.__doTick = True
-        
-        # testBlock = Block()
-        # testBlock.isOccupied = True
-        # testBlock.isPlaced = True
-        # testBlock.setColor(PRACTICE_COLOR)
-        # self.board.blockGrid[BOARD_HEIGHT - 1] = [copy.deepcopy(testBlock) for i in range(9)]
-        # self.board.blockGrid[BOARD_HEIGHT - 1].append(Block())
-        # self.board.blockGrid[BOARD_HEIGHT - 2] = [copy.deepcopy(testBlock) for i in range(9)]
-        # self.board.blockGrid[BOARD_HEIGHT - 2].append(Block())
-        # self.board.blockGrid[BOARD_HEIGHT - 3] = [copy.deepcopy(testBlock) for i in range(9)]
-        # self.board.blockGrid[BOARD_HEIGHT - 3].append(Block())
-        # self.board.blockGrid[BOARD_HEIGHT - 4] = [copy.deepcopy(testBlock) for i in range(9)]
-        # self.board.blockGrid[BOARD_HEIGHT - 4].append(Block())
-        # self.board.blockGrid[BOARD_HEIGHT - 5] = [copy.deepcopy(testBlock) for i in range(9)]
-        # self.board.blockGrid[BOARD_HEIGHT - 5].append(Block())
 
     # Run after every timer tick
     def tick(self):
@@ -173,7 +158,7 @@ class GameManager(object):
     # For J, L, S, T, and Z tetrominos
     def __attemptKick(self, direction):
         # Attempt to rotate the mino in place
-        # If it fails, then we need to test the mino in 5 different "kick" states
+        # If it fails, then we need to test the mino in 4 different "kick" states
         # If none of the tests pass, the mino does not move, and stays in its current state
 
         self.currentMino.prevState = self.currentMino.currentState 
@@ -230,12 +215,12 @@ class GameManager(object):
             
         # 3 = L
         elif (self.currentMino.currentState == 3):
-            # L -> 2
-            if (direction == 1):
-                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,-1), (0,2),(-1,2)])
             # L -> 0
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)])
+            # L -> 2
             elif (direction == -1):
-                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,1), (0,2), (-1,2)])
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,-1), (0,2), (-1,2)])
             # L -> R
             elif (direction == 2):
                 # TODO
