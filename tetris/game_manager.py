@@ -14,7 +14,7 @@ BOARD_WIDTH: Final = 10
 BOARD_HEIGHT: Final = 23
 
 # Starting coordinate for tetrominos
-STARTING_COORD_ROW: Final = 1
+STARTING_COORD_ROW: Final = 15
 STARTING_COORD_COL: Final = 4
 
 def soundMove():
@@ -50,21 +50,21 @@ class GameManager(object):
         self.__nextTetromino()
         self.__doTick = True
         
-        testBlock = Block()
-        testBlock.isOccupied = True
-        testBlock.setColor(PRACTICE_COLOR)
-        self.board.blockGrid[BOARD_HEIGHT - 1] = [copy.deepcopy(testBlock) for i in range(9)]
-        self.board.blockGrid[BOARD_HEIGHT - 1].append(Block())
-        self.board.blockGrid[BOARD_HEIGHT - 2] = [copy.deepcopy(testBlock) for i in range(9)]
-        self.board.blockGrid[BOARD_HEIGHT - 2].append(Block())
-        self.board.blockGrid[BOARD_HEIGHT - 3] = [copy.deepcopy(testBlock) for i in range(9)]
-        self.board.blockGrid[BOARD_HEIGHT - 3].append(Block())
-        self.board.blockGrid[BOARD_HEIGHT - 4] = [copy.deepcopy(testBlock) for i in range(9)]
-        self.board.blockGrid[BOARD_HEIGHT - 4].append(Block())
-        self.board.blockGrid[BOARD_HEIGHT - 5] = [copy.deepcopy(testBlock) for i in range(9)]
-        self.board.blockGrid[BOARD_HEIGHT - 5].append(Block())
+        # testBlock = Block()
+        # testBlock.isOccupied = True
+        # testBlock.isPlaced = True
+        # testBlock.setColor(PRACTICE_COLOR)
+        # self.board.blockGrid[BOARD_HEIGHT - 1] = [copy.deepcopy(testBlock) for i in range(9)]
+        # self.board.blockGrid[BOARD_HEIGHT - 1].append(Block())
+        # self.board.blockGrid[BOARD_HEIGHT - 2] = [copy.deepcopy(testBlock) for i in range(9)]
+        # self.board.blockGrid[BOARD_HEIGHT - 2].append(Block())
+        # self.board.blockGrid[BOARD_HEIGHT - 3] = [copy.deepcopy(testBlock) for i in range(9)]
+        # self.board.blockGrid[BOARD_HEIGHT - 3].append(Block())
+        # self.board.blockGrid[BOARD_HEIGHT - 4] = [copy.deepcopy(testBlock) for i in range(9)]
+        # self.board.blockGrid[BOARD_HEIGHT - 4].append(Block())
+        # self.board.blockGrid[BOARD_HEIGHT - 5] = [copy.deepcopy(testBlock) for i in range(9)]
+        # self.board.blockGrid[BOARD_HEIGHT - 5].append(Block())
 
-    
     # Run after every timer tick
     def tick(self):
         if (self.__doTick):
@@ -74,7 +74,7 @@ class GameManager(object):
     def __drop(self):
         # Attempt to drop the current tetromino down by 1 row
         self.currentMino.prevAbsCoords = self.currentMino.absCoords
-        absCoords = self.getAbsoluteCoords() # Get absolute coordinates of the current tetromino
+        absCoords = self.getAbsoluteCoords(self.currentMino.currentState) # Get absolute coordinates of the current tetromino
 
         # Ensure that the current mino won't collide with anything present
         checks = [False, False, False, False]
@@ -108,8 +108,8 @@ class GameManager(object):
         self.currentMino.updateCurrentBlockState()
 
         # Place current state blocks
-        blockCoords = self.getAbsoluteCoords()   
-        currentBlocks = self.currentMino.getCurrentStateBlocks()
+        blockCoords = self.getAbsoluteCoords(self.currentMino.currentState)   
+        currentBlocks = self.currentMino.getStateBlocks(self.currentMino.currentState)
         for i in range(0, 4):
             row, col = blockCoords[i]
             self.board.blockGrid[row][col] = currentBlocks[i]
@@ -158,11 +158,11 @@ class GameManager(object):
         self.currentMino.absCoords = (STARTING_COORD_ROW, STARTING_COORD_COL)
         self.__updateBoard()
         
-    def getAbsoluteCoords(self):
+    def getAbsoluteCoords(self, desiredState):
         absCoords = [(0,0), (0,0), (0,0), (0,0)]
         
         # 4 blocks in a given state
-        state = self.currentMino.getCurrentStateBlocks()
+        state = self.currentMino.getStateBlocks(desiredState)
         for i in range (0, 4):
             absRow, absCol = self.currentMino.absCoords
             relRow, relCol = state[i].relCoords
@@ -170,20 +170,125 @@ class GameManager(object):
                 
         return absCoords
     
+    # For J, L, S, T, and Z tetrominos
+    def __attemptKick(self, direction):
+        # Attempt to rotate the mino in place
+        # If it fails, then we need to test the mino in 5 different "kick" states
+        # If none of the tests pass, the mino does not move, and stays in its current state
+
+        self.currentMino.prevState = self.currentMino.currentState 
+
+        # Determine the state the tetromino is trying to change to
+        desiredState = self.currentMino.currentState + direction
+        if (desiredState == 4): # Wrap 4 around to 0
+            desiredState = 0
+        if (desiredState == 5): # Wrap 3 around to 1 (mino was reversed)
+            desiredState = 1
+        elif (desiredState == -1): # Wrap -1 around to 3
+            desiredState = 3
+            
+        passingCoords = None
+
+        # 0 = spawn state
+        if (self.currentMino.currentState == 0):
+            # 0 -> R
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)])
+            # 0 -> L
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (1,1), (0,-2), (1,-2)])
+            # 0 -> 2
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # 1 = R
+        elif (self.currentMino.currentState == 1):
+            # R -> 2
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (1,-1), (0,2), (1,2)])
+            # R -> 0
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (1,-1), (0,2), (1,2)])
+            # R -> L
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # 2 = two successive rotations
+        elif (self.currentMino.currentState == 2):
+            # 2 -> L
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (1,1), (0,-2), (1,-2)])
+            # 2 -> R
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,1), (0,-2), (-1,-2)])
+            # 2 -> 0
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # 3 = L
+        elif (self.currentMino.currentState == 3):
+            # L -> 2
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,-1), (0,2),(-1,2)])
+            # L -> 0
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (-1,1), (0,2), (-1,2)])
+            # L -> R
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # A test passed, so set the tetromino's state and coordinates to it
+        if (passingCoords is not None):
+            self.currentMino.currentState = desiredState
+            self.currentMino.absCoords = passingCoords
+            soundRotate()
+            self.__updateBoard()
+            
+    def __testKicks(self, desiredState, tests):
+        # Absolute coordinates for the state we're rotating to
+        absCoords = self.getAbsoluteCoords(desiredState)
+        
+        for i, test in enumerate(tests):
+            blockPassed = [True, True, True, True]
+            x, y = test
+            y = y * -1 # Flip because we start Y from the top rather than the bottom
+            for j, coord in enumerate(absCoords):
+                row, col = coord
+                testY = row + y
+                testX = col + x
+                # Tested block goes outside of the board. Test failed
+                if ((testY >= BOARD_HEIGHT or testY < 0) or (testX >= BOARD_WIDTH or testX < 0)):
+                    blockPassed[j] = False
+                    break
+                # See if the desired block position is occupied. If so, the test fails
+                # And ensure the block isn't part of the current tetromino
+                elif (self.board.blockGrid[testY][testX].isOccupied):
+                    if ((testY, testX) not in self.getAbsoluteCoords(self.currentMino.currentState) 
+                        #and not ((testY, testX) in absCoords)
+                        and self.board.blockGrid[testY][testX].isPlaced):
+                        blockPassed[j] = False
+                        break
+                
+            # Return the passing test's absolute coordinates
+            if (all(blockPassed)):
+                row, col = absCoords[0]
+                return (row + y, col + x)
+        
+        # No tests passed. The mino does not change states
+        return None
+    
     def cw(self):
-        self.__updateMinoState(1)
-        soundRotate()
-        self.__updateBoard()
+        self.__attemptKick(1)
 
     def ccw(self):
-        self.__updateMinoState(-1)
-        soundRotate()
-        self.__updateBoard()
+        self.__attemptKick(-1)
         
     def reverse(self):
-        self.__updateMinoState(2)
-        soundRotate()
-        self.__updateBoard()
+        self.__attemptKick(2)
 
     def softDrop(self):
         self.__drop()
@@ -197,7 +302,7 @@ class GameManager(object):
 
         # Assume everything is good unless something is found
         checks = [True, True, True, True]
-        absCoords = self.getAbsoluteCoords()
+        absCoords = self.getAbsoluteCoords(self.currentMino.currentState)
         row, col = absCoords[0]
         
         while(all(checks) and row < BOARD_HEIGHT - 1):
@@ -220,7 +325,7 @@ class GameManager(object):
                 row, col = absCoords[0]
                 row += 1
                 self.currentMino.absCoords = (row, col) # Only sets absolute for center block
-                absCoords = self.getAbsoluteCoords() # Get all absolute coordinates
+                absCoords = self.getAbsoluteCoords(self.currentMino.currentState) # Get all absolute coordinates
                 
                 
         # Furthest drop point found
@@ -236,7 +341,7 @@ class GameManager(object):
         
     def moveLeft(self):
         self.currentMino.prevAbsCoords = self.currentMino.absCoords
-        absCoords = self.getAbsoluteCoords() # Get all coordinates of the current tetromino
+        absCoords = self.getAbsoluteCoords(self.currentMino.currentState) # Get all coordinates of the current tetromino
 
         # Ensure that the current mino won't collide with anything present
         checks = [False, False, False, False]
@@ -260,7 +365,7 @@ class GameManager(object):
         
     def moveRight(self):
         self.currentMino.prevAbsCoords = self.currentMino.absCoords
-        absCoords = self.getAbsoluteCoords() # Get all coordinates of the current tetromino
+        absCoords = self.getAbsoluteCoords(self.currentMino.currentState) # Get all coordinates of the current tetromino
 
         # Ensure that the current mino won't collide with anything present
         checks = [False, False, False, False]
@@ -312,3 +417,16 @@ class GameManager(object):
             soundLineClearedAny()
         elif (__linesCleared >= 4):
             soundLineClearedTetris()
+
+    def createTestBlock(self, event):
+        testBlock = Block()
+        testBlock.isOccupied = True
+        testBlock.isPlaced = True
+        testBlock.setColor(TEST_COLOR)
+        row, col = event.widget.absCoords
+        self.board.blockGrid[row][col] = testBlock
+    
+    def destroyTestBlock(self, event):
+        row, col = event.widget.absCoords
+        self.board.blockGrid[row][col] = EMPTY_BLOCK
+    

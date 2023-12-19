@@ -7,9 +7,14 @@ from typing import Final
 CANVAS_WIDTH: Final  = BLOCK_SIZE * BOARD_WIDTH
 CANVAS_HEIGHT: Final = BLOCK_SIZE * BOARD_HEIGHT
 
+class BlockLabel(tk.Label):
+    def __init__(self, *args, **kwargs):
+        super(BlockLabel, self).__init__(*args, **kwargs)
+        self.absCoords = (-1, -1)
+
 class GameWindow(tk.Tk):
     def __init__(self):
-        super().__init__()
+        super(GameWindow, self).__init__()
         self.geometry(str(CANVAS_WIDTH + 100) + "x" + str(CANVAS_HEIGHT + 100)) # Width x Height
         self.title("Tetris")
         self.resizable(False, False)
@@ -55,7 +60,7 @@ class GameWindow(tk.Tk):
         # Update current state blocks
         for row in range(0, BOARD_HEIGHT):
             for col in range(0, BOARD_WIDTH):
-                self.canvas.frameGrid[row][col].config(bg = self.gm.board.blockGrid[row][col].getColor())
+                self.canvas.labelGrid[row][col].config(bg = self.gm.board.blockGrid[row][col].getColor())
 
     def __keyEventListener(self, event):
         if (event.keysym == "Up" or event.keysym == "x"):
@@ -79,7 +84,7 @@ class GameWindow(tk.Tk):
 
 class GameCanvas(tk.Canvas):
     def __init__(self, window):
-        super().__init__()
+        super(GameCanvas, self).__init__()
         self.master = window
         self.configure(
             width = BOARD_WIDTH * BLOCK_SIZE,
@@ -88,7 +93,7 @@ class GameCanvas(tk.Canvas):
         )
         
         # Visualize the block grid via frames
-        self.frameGrid = [[tk.Frame() for row in range(BOARD_WIDTH)] for col in range(BOARD_HEIGHT)] 
+        self.labelGrid = [[None for row in range(BOARD_WIDTH)] for col in range(BOARD_HEIGHT)] 
        
         # Create grid managers for the board
         for col in range(0, BOARD_WIDTH):
@@ -99,21 +104,24 @@ class GameCanvas(tk.Canvas):
         # Upper 3 rows should be blank
         for y in range(0, 3):
             for x in range(0, BOARD_WIDTH):
-                frame = tk.Frame(
+                frame = BlockLabel(
                     self,
                     bg=MARGIN_COLOR,
                     width = BLOCK_SIZE,
                     height = BLOCK_SIZE,
                     relief = tk.SOLID,
-                    borderwidth = 1
+                    borderwidth = 1,
                 )
+                frame.bind("<Button-1>", lambda event: self.createTestBlock(event, window))
+                frame.bind("<Button-3>", lambda event: self.destroyTestBlock(event, window))
+                frame.absCoords = (y, x)
                 frame.grid(row = y, column = x)
-                self.frameGrid[y][x] = frame
+                self.labelGrid[y][x] = frame
 
         # Main board blocks
         for y in range(3, BOARD_HEIGHT):
             for x in range(0, BOARD_WIDTH):
-                frame = tk.Frame(
+                frame = BlockLabel(
                     self,
                     bg=window.gm.board.blockGrid[y][x].getColor(),
                     width = BLOCK_SIZE,
@@ -121,8 +129,23 @@ class GameCanvas(tk.Canvas):
                     relief = tk.SOLID,
                     borderwidth = 1
                 )
+                frame.bind("<Button-1>", lambda event: self.createTestBlock(event, window))
+                frame.bind("<Button-3>", lambda event: self.destroyTestBlock(event, window))
+                frame.absCoords = (y, x)
                 frame.grid(row = y, column = x)
-                self.frameGrid[y][x] = frame
+                self.labelGrid[y][x] = frame
+                
+    def createTestBlock(self, event, window):
+        row, col = event.widget.absCoords
+        self.labelGrid[row][col].config(bg = TEST_COLOR)
+        window.gm.createTestBlock(event)
+        pass
+    
+    def destroyTestBlock(self, event, window):
+        row, col = event.widget.absCoords
+        self.labelGrid[row][col].config(bg = BASE_COLOR)
+        window.gm.destroyTestBlock(event)
+        pass
         
 #if __name__ == "__main__":
 gw = GameWindow()

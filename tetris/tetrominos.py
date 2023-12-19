@@ -3,7 +3,7 @@ from enum import Enum
 
 BASE_COLOR: Final = "#302f2f"
 MARGIN_COLOR: Final = "#020c18"
-PRACTICE_COLOR: Final = "#bbbbbb"
+TEST_COLOR: Final = "#bbbbbb"
 
 class Bag(Enum):
     O = 0
@@ -49,7 +49,10 @@ class Tetromino(object):
                 
     def getStates(self):
         return self._states
-    
+
+    def getStateBlocks(self, desiredState):
+        return self.getStates()[desiredState]
+
     def updateCurrentBlockState(self):
         # Set all states to False
         for state in self._states:
@@ -58,17 +61,14 @@ class Tetromino(object):
                 block.isOccupied = False
 
         # Only set the current state to True
-        for block in self.getCurrentStateBlocks():
+        for block in self.getStateBlocks(self.currentState):
             block.isCurrent = True
             block.isOccupied = True
-    
-    def getCurrentStateBlocks(self):
-        return self.getStates()[self.currentState]
     
     def tetrominoPlaced(self):
         self.updateCurrentBlockState()        
 
-        for block in self.getCurrentStateBlocks():
+        for block in self.getStateBlocks(self.currentState):
             block.isCurrent = False
             block.isOccupied = True
             block.isPlaced = True
