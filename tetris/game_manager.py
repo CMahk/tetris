@@ -233,6 +233,84 @@ class GameManager(object):
             soundRotate()
             self.__updateBoard()
             
+    # For I tetromino
+    def __attemptKickI(self, direction):
+        # Attempt to rotate the mino in place
+        # If it fails, then we need to test the mino in 4 different "kick" states
+        # If none of the tests pass, the mino does not move, and stays in its current state
+
+        self.currentMino.prevState = self.currentMino.currentState
+
+        # Determine the state the tetromino is trying to change to
+        desiredState = self.currentMino.currentState + direction
+        if (desiredState == 4): # Wrap 4 around to 0
+            desiredState = 0
+        if (desiredState == 5): # Wrap 3 around to 1 (mino was reversed)
+            desiredState = 1
+        elif (desiredState == -1): # Wrap -1 around to 3
+            desiredState = 3
+            
+        passingCoords = None
+
+        # 0 = spawn state
+        if (self.currentMino.currentState == 0):
+            # 0 -> R
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-2,0), (1,0), (-2,-1), (1,2)])
+            # 0 -> L
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (2,0), (-1,2), (2,-1)])
+            # 0 -> 2
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # 1 = R
+        elif (self.currentMino.currentState == 1):
+            # R -> 2
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (2,0), (-1,2), (2,-1)])
+            # R -> 0
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (2,0), (-1,0), (2,1), (-1,-2)])
+            # R -> L
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # 2 = two successive rotations
+        elif (self.currentMino.currentState == 2):
+            # 2 -> L
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (2,0), (-1,0), (2,1), (-1,-2)])
+            # 2 -> R
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (-2,0), (1,-2), (-2,1)])
+            # 2 -> 0
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # 3 = L
+        elif (self.currentMino.currentState == 3):
+            # L -> 0
+            if (direction == 1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (-2,0), (1,-2), (-2,1)])
+            # L -> 2
+            elif (direction == -1):
+                passingCoords = self.__testKicks(desiredState, [(0,0), (-2,0), (1,0), (-2,-1), (1,2)])
+            # L -> R
+            elif (direction == 2):
+                # TODO
+                pass
+            
+        # A test passed, so set the tetromino's state and coordinates to it
+        if (passingCoords is not None):
+            self.currentMino.currentState = desiredState
+            self.currentMino.absCoords = passingCoords
+            soundRotate()
+            self.__updateBoard()
+            
     def __testKicks(self, desiredState, tests):
         # Absolute coordinates for the state we're rotating to
         absCoords = self.getAbsoluteCoords(desiredState)
@@ -267,13 +345,22 @@ class GameManager(object):
         return None
     
     def cw(self):
-        self.__attemptKick(1)
+        if (self.currentMino.shape == "I"):
+            self.__attemptKickI(1)
+        else:
+            self.__attemptKick(1)
 
     def ccw(self):
-        self.__attemptKick(-1)
+        if (self.currentMino.shape == "I"):
+            self.__attemptKickI(-1)
+        else:
+            self.__attemptKick(-1)
         
     def reverse(self):
-        self.__attemptKick(2)
+        if (self.currentMino.shape == "I"):
+            self.__attemptKickI(2)
+        else:
+            self.__attemptKick(2)
 
     def softDrop(self):
         self.__drop()
