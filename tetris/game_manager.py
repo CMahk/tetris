@@ -10,7 +10,7 @@ BLOCK_SIZE: Final = 25
 EMPTY_BLOCK: Final = Block()
 
 # In blocks
-BOARD_WIDTH: Final = 10 
+BOARD_WIDTH: Final = 10
 BOARD_HEIGHT: Final = 23
 
 # Starting coordinate for tetrominos
@@ -53,7 +53,7 @@ class GameManager(object):
     # Run after every timer tick
     def tick(self):
         if (self.__doTick):
-            self.__drop()
+            #self.__drop()
             self.__updateBoard()
         
     def __drop(self):
@@ -89,7 +89,7 @@ class GameManager(object):
                     self.board.blockGrid[row][col] = EMPTY_BLOCK
                     
         # Refresh the current tetromino's block state
-        self.__updateMinoState(0)
+        #self.__updateMinoState(0)
         self.currentMino.updateCurrentBlockState()
 
         # Place current state blocks
@@ -155,7 +155,7 @@ class GameManager(object):
                 
         return absCoords
     
-    # For J, L, S, T, and Z tetrominos
+    # For J, L, S, T, and Z tetrominos (SRS)
     def __attemptKick(self, direction):
         # Attempt to rotate the mino in place
         # If it fails, then we need to test the mino in 4 different "kick" states
@@ -230,10 +230,13 @@ class GameManager(object):
         if (passingCoords is not None):
             self.currentMino.currentState = desiredState
             self.currentMino.absCoords = passingCoords
+            self.currentMino.spun = True
             soundRotate()
             self.__updateBoard()
+        else:
+            self.currentMino.spun = False
             
-    # For I tetromino
+    # For I tetromino (SRS+)
     def __attemptKickI(self, direction):
         # Attempt to rotate the mino in place
         # If it fails, then we need to test the mino in 4 different "kick" states
@@ -251,14 +254,23 @@ class GameManager(object):
             desiredState = 3
             
         passingCoords = None
+        rowWobble = colWobble = 0 # Offsets
 
         # 0 = spawn state
         if (self.currentMino.currentState == 0):
             # 0 -> R
             if (direction == 1):
+                row, col = self.currentMino.absCoords
+                rowWobble = 0
+                colWobble = 1
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (-2,0), (1,0), (-2,-1), (1,2)])
             # 0 -> L
             elif (direction == -1):
+                row, col = self.currentMino.absCoords
+                rowWobble = 1
+                colWobble = 0
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (2,0), (-1,2), (2,-1)])
             # 0 -> 2
             elif (direction == 2):
@@ -269,9 +281,17 @@ class GameManager(object):
         elif (self.currentMino.currentState == 1):
             # R -> 2
             if (direction == 1):
+                row, col = self.currentMino.absCoords
+                rowWobble = 1
+                colWobble = 0
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (-1,0), (2,0), (-1,2), (2,-1)])
             # R -> 0
             elif (direction == -1):
+                row, col = self.currentMino.absCoords
+                rowWobble = 0
+                colWobble = -1
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (2,0), (-1,0), (2,1), (-1,-2)])
             # R -> L
             elif (direction == 2):
@@ -282,9 +302,17 @@ class GameManager(object):
         elif (self.currentMino.currentState == 2):
             # 2 -> L
             if (direction == 1):
+                row, col = self.currentMino.absCoords
+                rowWobble = 0
+                colWobble = -1
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (2,0), (-1,0), (2,1), (-1,-2)])
             # 2 -> R
             elif (direction == -1):
+                row, col = self.currentMino.absCoords
+                rowWobble = -1
+                colWobble = 0
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (-2,0), (1,-2), (-2,1)])
             # 2 -> 0
             elif (direction == 2):
@@ -295,9 +323,17 @@ class GameManager(object):
         elif (self.currentMino.currentState == 3):
             # L -> 0
             if (direction == 1):
+                row, col = self.currentMino.absCoords
+                rowWobble = -1
+                colWobble = 0
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (1,0), (-2,0), (1,-2), (-2,1)])
             # L -> 2
             elif (direction == -1):
+                row, col = self.currentMino.absCoords
+                rowWobble = 0
+                colWobble = 1
+                self.currentMino.absCoords = (row + rowWobble, col + colWobble)
                 passingCoords = self.__testKicks(desiredState, [(0,0), (-2,0), (1,0), (-2,-1), (1,2)])
             # L -> R
             elif (direction == 2):
@@ -308,9 +344,10 @@ class GameManager(object):
         if (passingCoords is not None):
             self.currentMino.currentState = desiredState
             self.currentMino.absCoords = passingCoords
+            row, col = self.currentMino.absCoords
             soundRotate()
             self.__updateBoard()
-            
+
     def __testKicks(self, desiredState, tests):
         # Absolute coordinates for the state we're rotating to
         absCoords = self.getAbsoluteCoords(desiredState)
